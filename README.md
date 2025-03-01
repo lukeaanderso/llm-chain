@@ -93,22 +93,66 @@ export DEEPHAVEN_USERNAME=your_username
 export DEEPHAVEN_PASSWORD=your_password
 ```
 
+## Project Structure
+
+The project is organized into the following modules:
+
+```
+src/llm_chain/
+├── crawler.py     # Web crawling functionality
+├── llm.py         # LLM and embeddings initialization
+├── rag.py         # RAG graph creation and query handling
+└── vectorstore.py # Vector store operations
+```
+
+### Key Components:
+
+1. **crawler.py**
+   - `WebsiteCrawler`: Scrapy-based crawler for advanced web crawling
+   - `SimpleCrawler`: Requests/BeautifulSoup-based crawler for simpler needs
+   - `load_web_documents`: Utility function to load documents from web URLs
+
+2. **vectorstore.py**
+   - `chunk_documents`: Split documents into smaller chunks for embedding
+   - `create_vector_store`: Create or connect to a Chroma vector store
+
+3. **llm.py**
+   - `get_llm`: Initialize the language model
+   - `get_embeddings`: Initialize the embedding model
+
+4. **rag.py**
+   - `create_rag_graph`: Create a RAG graph with retrieval and generation steps
+
+### Example Scripts:
+
+- **crawl_deephaven.py**: Crawl Deephaven documentation and store in vector database
+- **query_deephaven.py**: Interactive query interface for Deephaven documentation
+- **example.py**: Simple example of using the RAG system
+
 ## Web Crawling and Authentication
 
 ### Crawling Websites
-You can now crawl entire websites and extract text for your vector store:
+You can now crawl entire websites and extract text for your vector store using the dedicated crawler module:
 
 ```python
-from llm_chain.vectorstore import load_documents
+from llm_chain.crawler import load_web_documents, SimpleCrawler, crawl_website
 
-# Simple crawling
-docs = load_documents("https://example.com")
+# Simple document loading
+docs = load_web_documents("https://example.com")
 
-# Crawl with domain restrictions
-docs = load_documents(
+# Advanced crawling with Scrapy
+docs = crawl_website(
     "https://example.com", 
     allowed_domains=["example.com", "www.example.com"]
 )
+
+# Using the SimpleCrawler for more control
+crawler = SimpleCrawler(
+    base_url="https://example.com",
+    max_pages=50,
+    delay=1  # 1 second delay between requests
+)
+docs = crawler.crawl()
 ```
 
 ### Authentication Methods
@@ -116,7 +160,8 @@ Support multiple authentication methods:
 
 #### Basic Authentication
 ```python
-docs = load_documents(
+# Using load_web_documents
+docs = load_web_documents(
     "https://protected-site.com", 
     auth_config={
         'method': 'basic',
@@ -124,11 +169,19 @@ docs = load_documents(
         'password': 'your_password'
     }
 )
+
+# Using SimpleCrawler
+crawler = SimpleCrawler(
+    base_url="https://protected-site.com",
+    username="your_username",
+    password="your_password"
+)
+docs = crawler.crawl()
 ```
 
 #### Token Authentication
 ```python
-docs = load_documents(
+docs = load_web_documents(
     "https://api-site.com", 
     auth_config={
         'method': 'token',
@@ -139,7 +192,7 @@ docs = load_documents(
 
 #### Session-based Authentication
 ```python
-docs = load_documents(
+docs = load_web_documents(
     "https://login-required-site.com", 
     auth_config={
         'method': 'session',
@@ -155,7 +208,8 @@ docs = load_documents(
 ## Usage
 ```python
 from llm_chain.llm import get_llm, get_embeddings
-from llm_chain.vectorstore import load_documents, chunk_documents, create_vector_store
+from llm_chain.crawler import load_web_documents
+from llm_chain.vectorstore import chunk_documents, create_vector_store
 from llm_chain.rag import create_rag_graph
 
 # Initialize components
@@ -163,7 +217,7 @@ llm = get_llm()
 embeddings = get_embeddings()
 
 # Load and chunk documents
-docs = load_documents(("https://example.com/blog",))
+docs = load_web_documents("https://example.com/blog")
 chunks = chunk_documents(docs)
 
 # Create vector store (will use Chroma server if configured)
@@ -177,7 +231,24 @@ result = graph.invoke({"question": "Your question here"})
 print(result['answer'])
 ```
 
-## Interactive Query Example
+## Example Scripts
+
+The project includes several example scripts to demonstrate different functionalities:
+
+### 1. Crawling Documentation
+
+`crawl_deephaven.py` demonstrates how to crawl a documentation website and store the content in a vector database:
+
+```bash
+# Set required environment variables
+export DEEPHAVEN_USERNAME=your_username
+export DEEPHAVEN_PASSWORD=your_password
+
+# Run the crawler
+python crawl_deephaven.py
+```
+
+### 2. Interactive Query
 
 The project includes an interactive query script that allows you to ask questions about documents stored in your vector database. Here's how to use it:
 
